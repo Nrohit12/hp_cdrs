@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hp_cdrs/app_screens/social_autopsy/section_b_4.dart';
+import 'package:hp_cdrs/app_screens/social_autopsy/section_c.dart';
+import 'package:hp_cdrs/app_screens/social_autopsy/section_d.dart';
 import 'package:hp_cdrs/app_screens/social_autopsy/user.dart';
 import 'package:hp_cdrs/app_screens/social_autopsy/section_a.dart';
 
@@ -9,14 +12,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = User();
     return MaterialApp(
-      home: SocialAutopsyLogin(user:user),
+      home: SocialAutopsyD(user:user),
     );
   }
 }
 
 class SocialAutopsyLogin extends StatefulWidget {
   final User user;
-  SocialAutopsyLogin({Key key, this.user}):super(key:key);
+  final String appliNumber;
+  SocialAutopsyLogin({Key key, this.user, this.appliNumber}):super(key:key);
   @override
   State createState() => SocialAutopsyLoginState();
 }
@@ -28,7 +32,6 @@ class SocialAutopsyLoginState extends State<SocialAutopsyLogin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.yellow.shade50,
         appBar: AppBar(
           title: Text('Social Autopsy'),
           backgroundColor: Colors.blue,
@@ -49,6 +52,7 @@ class SocialAutopsyLoginState extends State<SocialAutopsyLogin> {
                 Card(
                   margin: EdgeInsets.symmetric(vertical: 30.0),
                       child: TextFormField(
+                        initialValue: widget.appliNumber,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
                             labelText: 'Application Number',
@@ -83,14 +87,9 @@ class SocialAutopsyLoginState extends State<SocialAutopsyLogin> {
                           padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 5.0),
                           child: TextFormField(
                             decoration: InputDecoration(
-                                labelText: 'MCTS Number',
+                                labelText: 'RCH Number',
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8.0))),
-                            validator: (value) {
-                              if (value.isEmpty) {
-                                return 'Please enter valid entry';
-                              }
-                            },
                             onSaved: (value) {
                               widget.user.MCTS = value;
                             },

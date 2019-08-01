@@ -3,7 +3,6 @@ import 'user.dart';
 import 'package:hp_cdrs/common/apifunctions/sendDataAPI.dart';
 import 'package:hp_cdrs/connectionStatus.dart';
 import 'dart:async';
-import 'package:hp_cdrs/app_screens/mo/neoFormStatus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -191,27 +190,30 @@ class _verbalAutopsySec3State extends State<verbalAutopsySec3> {
                       onPressed: () {
                           if ( _knowledgeCheck == false) {
                             // The checkbox wasn't checked
-                            showSnackBar('Please check the checkbox to proceed');
+                            showSnackBar('Please check the declaration to proceed');
                           }
 
                           if(_formKey.currentState.validate() && _knowledgeCheck  ==  true){
                             _formKey.currentState.save();
+                            showWaiting();
 
                             user child  = widget.verbal_Autopsy_Obj;
                             var data  = createMap(child);
 
-                            sendData('http://13.126.72.137/api/neonate',data).then((status){
+
+                            sendData('http://13.235.43.83/api/neonate',data).then((status){
                               print(status);
                               if(status) {
-                                Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        neoFormsStatus()));
+                                showAlert('Form submitted successfully!', 'Sent');
+
+//                                Navigator.of(context).push(MaterialPageRoute(
+//                                    builder: (BuildContext context) =>
+//                                        neoFormsStatus()));
                               }
                               else{
                                 writeToFile(data);
-                                Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        neoFormsStatus()));
+                                showAlert('Form saved in offline mode. Please do not close'
+                                    ' the app until connected to the internet.', 'Saved');
                               }
 
 
@@ -231,6 +233,58 @@ class _verbalAutopsySec3State extends State<verbalAutopsySec3> {
     ));
   }
 
+  void dialogResult(){
+//    print('button pressed');
+    for(int i = 0; i < 11; i++)
+      Navigator.of(context).pop();
+
+  }
+
+  void showAlert(String value, String dialogTitle){
+
+    AlertDialog dialog = AlertDialog(
+      title: Text(dialogTitle, textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 20.0),),
+      content: Text(value, textAlign: TextAlign.justify,),
+      actions: <Widget>[
+        FlatButton(onPressed:(){dialogResult();}, child: Text('OK'))
+      ],
+    );
+    showDialog(barrierDismissible: false, context: context,
+        builder: (BuildContext context){return dialog;});
+  }
+
+  void showWaiting(){
+
+    AlertDialog dialog = AlertDialog(
+//      content: Text('Please Wait...', textAlign: TextAlign.center,),
+//      contentPadding: EdgeInsets.only(left: 0.0, right: 15.0, top: 15.0, bottom: 15.0),
+    );
+    showDialog(barrierDismissible: false, context: context,
+        builder: (BuildContext context){return Dialog(
+//          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+          child: Container(
+            height: 80.0,
+            width: 90.0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child:Image(
+                        width: 70.0,
+                        height: 70.0,
+//                  fit: BoxFit.contain,
+                        image: new AssetImage("assets/waiting.gif"))),
+                Flexible(child: Text('Please Wait...', style: TextStyle(
+                    fontSize: 17.0, fontWeight: FontWeight.w500
+                ),))
+              ],
+            ),
+          ),
+        );});
+
+  }
 
   void showSnackBar(String message){
     var snackBar = SnackBar(

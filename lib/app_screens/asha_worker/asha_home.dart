@@ -8,6 +8,7 @@ import 'package:hp_cdrs/model/classes/class_asha.dart';
 import 'package:hp_cdrs/app_screens/asha_worker/asha_page.dart';
 import 'package:hp_cdrs/common/apifunctions/sendDataAPI.dart';
 import 'package:hp_cdrs/connectionStatus.dart';
+import '104previousForms.dart';
 
 
 void  main(){
@@ -27,6 +28,8 @@ class AshaHomeScreen extends StatefulWidget {
 
 class _AshaHomeScreenState extends State<AshaHomeScreen> {
 
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   StreamSubscription _connectionChangeStream;
   bool isOffline = false;
 
@@ -72,7 +75,7 @@ class _AshaHomeScreenState extends State<AshaHomeScreen> {
           entries.add(tempEntry);
         }
         else{
-          sendData('http://13.126.72.137/api/asha', data);
+          sendData('http://13.235.43.83/api/asha', data);
         }
 
         if(i==(jsonList.length-1) && !isOffline){
@@ -113,53 +116,102 @@ class _AshaHomeScreenState extends State<AshaHomeScreen> {
   void clearFile(){
     if(fileExists){
       jsonFile.writeAsStringSync('');
+      entries.clear();
     }
   }
 
+  Future<bool> onBackPress(){
+    if(_scaffoldKey.currentState.isDrawerOpen == false) {
+      _scaffoldKey.currentState.openDrawer();
+      return Future.value(false);
+    }
+    else if(_scaffoldKey.currentState.isDrawerOpen == true){
+      return Future.value(true);
+    }
+  }
 
+  void showAlert(String value) {
+
+    AlertDialog dialog = AlertDialog(
+      content: Text(value, textAlign: TextAlign.justify,),
+      actions: <Widget>[
+        FlatButton(onPressed:(){ clearFile(); entries.clear(); Navigator.of(context).pop(); }, child: Text('Yes')),
+        FlatButton(onPressed:(){Navigator.of(context).pop();}, child: Text('No')),
+      ],
+    );
+    showDialog(barrierDismissible: false, context: context,
+        builder: (BuildContext context){return dialog;}).then((_)=>setState((){}));
+  }
 
   @override
   Widget build(BuildContext context) {
 
 
-    return Scaffold(
-      appBar: AppBar(
-        title:  Text('Forms Pending'),
-      ),
-      drawer: BasicDrawer(),
-      body: ListView.builder(
-          itemCount: entries.length,
-          itemBuilder: (BuildContext  context,  int index)  {
-            return  Card(
-              child: ListTile(
-                title: Text("Name: "+entries[index].name),
-                leading: Icon(Icons.contacts),
+    return WillPopScope(
+      onWillPop: onBackPress,
+      child: Scaffold(
+        key: _scaffoldKey,
+        appBar: AppBar(
+          title:  Text('104 Dashboard'),
+        ),
+        drawer: BasicDrawer(),
+        body: Column(children: <Widget>[
+          RaisedButton(
+            child: Text('Show Previous Filled Forms'),
+            textColor: Colors.white,
+            color: Colors.orange,
+            onPressed: (){
+              Navigator.push(context,
+                  MaterialPageRoute(builder:(BuildContext  context)  =>  PreviousForm()));
+            },
+          ),
+          RaisedButton(
+            child: Text('Clear Saved Forms'),
+            textColor: Colors.white,
+            color: Colors.red,
+            onPressed: (){
+              showAlert('Are you sure?');
+            },
+          ),
+          Flexible(
+              child:   ListView.builder(
+                  itemCount: entries.length,
+                  itemBuilder: (BuildContext  context,  int index)  {
+                    return  Card(
+                      child: ListTile(
+                        title: Text("Name: "+entries[index].name),
+                        leading: Icon(Icons.contacts),
+                      ),
+                    );
+                  }
               ),
-            );
-          }
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
-        tooltip: 'Add new Entry',
-        onPressed: () {
-          Navigator.push<Child>(
-           context,
-           MaterialPageRoute(
-               builder: (context) => hpForm(),
-           ),
-          ).then((newEntry){
-              if(newEntry!=null){
-                setState(() {
-                  entries.add(newEntry);
-                  writeToFile(newEntry);
-                });
+            )
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          icon: Icon(Icons.add),
+          label: Text('New Case'),
+          tooltip: 'Add new Entry',
+          onPressed: () {
+            Navigator.push<Child>(
+             context,
+             MaterialPageRoute(
+                 builder: (context) => hpForm(),
+             ),
+            ).then((newEntry){
+                if(newEntry!=null){
+                  setState(() {
+                    entries.add(newEntry);
+                    writeToFile(newEntry);
+                  });
+                }
               }
-            }
 
-          );
-        },
+            );
+          },
+        ),
+
       ),
-
     );
   }
 

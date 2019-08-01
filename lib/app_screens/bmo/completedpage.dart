@@ -2,7 +2,7 @@
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
+import 'package:hp_cdrs/common/functions/getToken.dart';
 import 'package:flutter/material.dart';
 
 
@@ -32,7 +32,12 @@ class _ListviewState extends State<Listview> {
   List completed=[];
 
   Future getData() async {
-    http.Response response = await http.get("http://13.126.72.137/api/104PreviousForms");
+    final token = await getToken();
+    http.Response response = await http.get("http://13.235.43.83/api/104ByBlock",
+      headers: {
+        'authToken' : token
+      }
+    );
     user = json.decode(response.body);
     setState(() {
       appli = user["docs"];
@@ -49,7 +54,9 @@ class _ListviewState extends State<Listview> {
   @override
   void initState() {
     super.initState();
-    getData();
+    setState(() {
+      getData();
+    });
 
   }
 
@@ -57,29 +64,38 @@ class _ListviewState extends State<Listview> {
 
   @override
   Widget build(BuildContext context) {
+    print(completed);
     return Scaffold(
-        body: ListView.builder(
-
+        body: completed.isEmpty?
+            Center(
+        child: Text('No Application',
+          style: TextStyle(fontSize: 20.0,
+            color: Colors.black,
+          ),
+        ),
+      ):
+      ListView.builder(
           itemCount: completed == null ? 0 : completed.length,
           itemBuilder: (BuildContext context, int index) {
-            return ListTile(
+
+              return ListTile(
 
 
-              trailing: CircleAvatar(
-                backgroundImage: AssetImage("assets/hpgovt.png"),
-              ),
-              title: Text("${completed[index]["application"]}",
-                style: TextStyle(
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w700,
-                ),),
-              subtitle: Text("Medical Officer :  ${completed[index]['mo']}"),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (context) => DetailPage(completed[index]))
-                );
-              },
-            );
+                trailing: CircleAvatar(
+                  backgroundImage: AssetImage("assets/hpgovt.png"),
+                ),
+                title: Text("${completed[index]["application"]}",
+                  style: TextStyle(
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.w700,
+                  ),),
+                subtitle: Text("Medical Officer :  ${completed[index]['mo']}"),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(
+                      builder: (context) => DetailPage(completed[index]))
+                  );
+                },
+              );
           },
         )
     );

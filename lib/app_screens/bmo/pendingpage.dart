@@ -34,10 +34,10 @@ class _ListviewState extends State<Listview> {
 
   Future getData() async {
     final token = await getToken();
-    http.Response response = await http.get("http://13.126.72.137/api/104ByBlock",
-        headers:{
-        'authToken' : token
-        }
+    http.Response response = await http.get("http://13.235.43.83/api/104ByBlock",
+      headers: {
+        'authToken':  token
+      }
     );
     user = json.decode(response.body);
     setState(() {
@@ -45,7 +45,7 @@ class _ListviewState extends State<Listview> {
     });
     String display;
     for(int i=0;i<appli.length;i++){
-      if(appli[i]["mo"]==null){
+      if(appli[i]["moAssigned"]==null && appli[i]["anm"]!=null){
         pending.add(appli[i]);
       }
 
@@ -55,7 +55,9 @@ class _ListviewState extends State<Listview> {
   @override
   void initState() {
     super.initState();
-    getData();
+    setState(() {
+      getData();
+    });
 
   }
 
@@ -64,13 +66,18 @@ class _ListviewState extends State<Listview> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: ListView.builder(
+        body: pending.isEmpty?
+        Center(
+          child: Text('No Application',
+            style: TextStyle(fontSize: 20.0,
+              color: Colors.black,
+            ),
+          ),
+        ):ListView.builder(
 
           itemCount: pending == null ? 0 : pending.length,
           itemBuilder: (BuildContext context, int index) {
             return ListTile(
-
-
               trailing: CircleAvatar(
                 backgroundImage: AssetImage("assets/hpgovt.png"),
               ),
@@ -79,7 +86,7 @@ class _ListviewState extends State<Listview> {
                   fontSize: 20.0,
                   fontWeight: FontWeight.w700,
                 ),),
-              subtitle: Text("Asha :  ${pending[index]['ashaName']}"),
+              subtitle: Text("MO Assigned :  ${pending[index]['moAssigned']}"),
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(
                     builder: (context) => DetailPage(pending[index]))
@@ -176,7 +183,7 @@ class DetailPage extends StatelessWidget {
         ),
       ),
       floatingActionButton : FloatingActionButton.extended(
-        onPressed: () {Navigator.push(context, MaterialPageRoute(builder: (context) => Molist()));},
+        onPressed: () {Navigator.push(context, MaterialPageRoute(builder: (context) => Molist(appliNumber:appli["application"].toString())));},
         icon : Icon(Icons.account_circle,),
         label: Text("Assign MO"),
       ),

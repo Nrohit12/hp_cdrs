@@ -10,7 +10,7 @@ import 'package:hp_cdrs/app_screens/homeScreen.dart';
 import 'package:hp_cdrs/model/json/loginModel.dart';
 
 Future<LoginModel> requestLoginAPI(BuildContext context, String username, String password) async {
-  final url = "http://13.126.72.137/api/login";
+  final url = "http://13.235.43.83/api/login";
 
   Map<String, String> body = {
     'username': username,
@@ -28,11 +28,14 @@ Future<LoginModel> requestLoginAPI(BuildContext context, String username, String
     print("success");
 
     saveCurrentLogin(responseJson);
-    Navigator.push(
+    Navigator.of(context).pop();                        //for waiting dialog
+    Navigator.pushReplacement(
         context,
         new MaterialPageRoute(
             builder: (BuildContext context) =>
-            HomeScreen(user.role)));
+            HomeScreen(user.role),
+          settings: RouteSettings(name: "HomeScreen")
+        ));
 
     return LoginModel.fromJson(responseJson);
   } else {

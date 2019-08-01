@@ -37,6 +37,8 @@ class _Form5State extends State<Form5> {
 
   bool submission = false;
 
+  var dropdownPlaceOfDeath = ['Home', 'Transit', 'Hospital'];
+
   Map<String, dynamic> _categories = {
     "responseCode": "1",
     "responseText": "List categories.",
@@ -124,7 +126,7 @@ class _Form5State extends State<Form5> {
                   children: <Widget>[
 
                     Text(
-                      "16. ",
+                      "1. ",
                       style: TextStyle(fontSize: 18.0),
                     ),
 
@@ -161,9 +163,35 @@ class _Form5State extends State<Form5> {
                   padding: const EdgeInsets.only(top: 10.0),
                   child: Row(
                     children: <Widget>[
+                      Text(
+                        "2. Place of death: ",
+                        style: TextStyle(fontSize: 18.0),
+                      ),
+                      DropdownButton<String>(
+                        items: dropdownPlaceOfDeath.map((String value1) {
+                          return DropdownMenuItem<String>(
+                            value: value1,
+                            child: Text(value1),
+                          );
+                        }).toList(),
+                        value: widget.user.placeOfDeath,
+                        onChanged: (String newValueSelected) {
+                          setState(() {
+                            this.widget.user.placeOfDeath = newValueSelected;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Row(
+                    children: <Widget>[
 
                       Text(
-                        "17. ",
+                        "2. ",
                         style: TextStyle(fontSize: 18.0),
                       ),
 
@@ -207,7 +235,7 @@ class _Form5State extends State<Form5> {
                 Row(
                   children: <Widget>[
                     Text(
-                      "18. ",
+                      "3. ",
                       style: TextStyle(fontSize: 18.0),
                     ),
 
@@ -262,41 +290,51 @@ class _Form5State extends State<Form5> {
                       'Submit',
                       style: TextStyle(fontSize: 20.0, color: Colors.white),
                     ),
-                    onPressed: () {
-                      setState(() async {
+                    onPressed: () async{
+                      setState(() {
                         if (_formKey.currentState.validate()) {
-                          if(submission == true) {
+
+                          if(widget.user.delay.isEmpty) {
+                            _showSnackBar("Please check the delay option");
+                          }
+                          else if(submission == true) {
+
+//                            showDialog(
+//                                context: context,
+//                                builder: (BuildContext context) {
+//                                  return AlertDialog(
+//                                    title: Text("Alert"),
+//                                    content: Text("The form has been submitted"),
+//                                  );
+//                                }
+//                            );
+
                             final form = _formKey.currentState;
                             form.save();
                             var data  = createMap(widget.user);
                             print(data);
+                            showWaiting();
 
-                            sendData('http://13.126.72.137/api/test',data).then((status){
+                            sendData('http://13.235.43.83/api/anmform',data).then((status){
                               print(status);
                               if(status) {
-                                Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        ANMStatus()));
+                                showAlert('Form submitted successfully!', 'Sent');
+//                                Navigator.of(context).push(MaterialPageRoute(
+//                                    builder: (BuildContext context) =>
+//                                        ANMStatus()));
                               }
                               else{
                                 writeToFile(data);
-                                Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        ANMStatus()));
+                                showAlert('Form saved in offline mode. Please do not close'
+                                    ' the app until connected to the internet.', 'Saved');
+//                                Navigator.of(context).push(MaterialPageRoute(
+//                                    builder: (BuildContext context) =>
+//                                        ANMStatus()));
                               }
 
 
                             });
 
-                            showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text("Alert"),
-                                    content: Text("The form has been submitted"),
-                                  );
-                                }
-                            );
 
                           }
                           else {
@@ -314,6 +352,59 @@ class _Form5State extends State<Form5> {
         ),
       ),
     );
+  }
+
+  void showAlert(String value, String dialogTitle){
+
+    AlertDialog dialog = AlertDialog(
+      title: Text(dialogTitle, textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 20.0),),
+      content: Text(value, textAlign: TextAlign.justify,),
+      actions: <Widget>[
+        FlatButton(onPressed:(){dialogResult();}, child: Text('OK'))
+      ],
+    );
+    showDialog(barrierDismissible: false, context: context,
+        builder: (BuildContext context){return dialog;});
+  }
+
+  void showWaiting(){
+
+    AlertDialog dialog = AlertDialog(
+//      content: Text('Please Wait...', textAlign: TextAlign.center,),
+//      contentPadding: EdgeInsets.only(left: 0.0, right: 15.0, top: 15.0, bottom: 15.0),
+    );
+    showDialog(barrierDismissible: false, context: context,
+        builder: (BuildContext context){return Dialog(
+//          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+          child: Container(
+            height: 80.0,
+            width: 90.0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child:Image(
+                        width: 70.0,
+                        height: 70.0,
+//                  fit: BoxFit.contain,
+                        image: new AssetImage("assets/waiting.gif"))),
+                Flexible(child: Text('Please Wait...', style: TextStyle(
+                    fontSize: 17.0, fontWeight: FontWeight.w500
+                ),))
+              ],
+            ),
+          ),
+        );});
+
+  }
+
+  void dialogResult(){
+//    print('button pressed');
+    Navigator.of(context).pushAndRemoveUntil
+      (MaterialPageRoute(builder:(BuildContext  context)  =>  ANMStatus()), (Route<dynamic> route) => false);
+
   }
 
   void _showSnackBar(message) {
@@ -375,7 +466,7 @@ class _Form5State extends State<Form5> {
       'treatmentTaken': child.treatmentTaken,
       'treatmentLocation': child.treatmentLocation,
 
-      'Probable': child.probable,
+      //'Probable': child.probable,
       'disease': child.disease,
 
       // According to the respondent, cause of death

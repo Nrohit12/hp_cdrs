@@ -13,7 +13,8 @@ import 'anm2.dart';
 class ANMWorker extends StatefulWidget {
 
   User user = User();
-  ANMWorker({Key key,@ required this.user}):super(key:key);
+  final String appliNumber;
+  ANMWorker({Key key,@ required this.user, this.appliNumber}):super(key:key);
 
   @override
   _ANMWorkerState createState() => _ANMWorkerState();
@@ -31,6 +32,8 @@ class _ANMWorkerState extends State<ANMWorker> {
     widget.user.bplCard = dropdownBPL[0];
     widget.user.growthCurve = growthCurve[0];
     widget.user.pastIllness = dropdownPastIllness[0];
+    widget.user.address.district = null;
+    widget.user.address.block = null;
 
   }
 
@@ -59,13 +62,13 @@ class _ANMWorkerState extends State<ANMWorker> {
 //  var pastIllness = 'No';
 //  var immunization = List();
 
-  var _districtName = ['BILASPUR', 'CHAMBA', 'HAMIRPUR', 'KANGRA', 'KINNAUR','KULLU', 'LAHUL AND SPITI', 'MANDI', 'SHIMLA', 'SIRMOUR', 'SOLAN', 'UNA'];
+  var _districtName = ['BILASPUR', 'CHAMBA', 'HAMIRPUR', 'KANGRA', 'KINNAUR','KULLU', 'LAHAUL AND SPITI', 'MANDI', 'SHIMLA', 'SIRMOUR', 'SOLAN', 'UNA'];
 
   var _bilaspurBlocks = ["SADAR","GHUMARWIN","JHANDUTTA"];
 
   var _chambaBlocks = ["TISSA","CHAMBA","MEHLA","BHATTIYAT","SALOONI","BHARMOUR","PANGI"];
 
-  var _hamirpurBlocks = ["BAMSON","BHORANJ","BIJHARI","HAMIRPUR","NADAUN","SUJNAPUR"];
+  var _hamirpurBlocks = ["BAMSON","BHORANJ","BIJHARI","HAMIRPUR","NADAUN","SUJANPUR"];
 
   var _kangraBlocks = ["RAIT","PANCHRUKHI","DEHRA","FATEHPUR","INDORA","NAGROTA BAGWAN","NURPUR","NAGROTA SURIAN","BAIJNATH","BHAWARNA","KANGRA","LAMBAGAON","SULLAH","PRAGPUR","DHARAMSHALA"];
 
@@ -136,29 +139,19 @@ class _ANMWorkerState extends State<ANMWorker> {
 
                 Padding(
                   padding: EdgeInsets.all(10.0),
-                  child: Row(
-                    children: <Widget>[
-
-                      Text(
-                        "Application number: ",
-                        style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.w500),
-                      ),
-
-                      Expanded(
-                        child: TextFormField(
-                          onSaved: (String value) {widget.user.applicationNumber = value;},
-                          validator: (String value) {
-                            if(value.isEmpty)
-                              return 'Please enter only alphabetical values';
-                          },
-                          decoration: InputDecoration(
-                              hintText: "Application No",
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.0))),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ],
+                  child: TextFormField(
+                    initialValue: widget.appliNumber,
+                    onSaved: (String value) {widget.user.applicationNumber = value;},
+                    validator: (String value) {
+                      if(value.isEmpty)
+                        return 'Please enter only alphabetical values';
+                    },
+                    decoration: InputDecoration(
+                        labelText: "Application No",
+                        hintText: "Application No",
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0))),
+                    keyboardType: TextInputType.number,
                   ),
                 ),
 
@@ -369,7 +362,7 @@ class _ANMWorkerState extends State<ANMWorker> {
                           onSaved: (String value) {widget.user.address.pincode = int.parse(value);},
                           keyboardType: TextInputType.number,
                           validator: (String val) {
-                            if (val.isEmpty) {
+                            if (val.isEmpty || int.parse(val)<170000 || int.parse(val)>179999 ) {
                               return 'Please enter a valid input';
                             }
                           },
@@ -727,7 +720,7 @@ class _ANMWorkerState extends State<ANMWorker> {
             blocksDropDownFun(_kulluBlocks);
           break;
 
-        case 'LAHUL AND SPITI':
+        case 'LAHAUL AND SPITI':
           return
             blocksDropDownFun(_lahulBlocks);
           break;

@@ -8,10 +8,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:hp_cdrs/common/apifunctions/sendDataAPI.dart';
 import 'package:hp_cdrs/common/widgets/basicDrawer.dart';
 import 'package:hp_cdrs/app_screens/social_autopsy/login.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+
+import 'dashboard.dart';
 
 class SocialAutopsyFormStatus extends StatefulWidget {
-  final User newEntry;
-  SocialAutopsyFormStatus({Key key, @required this.newEntry}):super(key:key);
   @override
   State<StatefulWidget> createState() => _SocialAutopsyFormStatusState();
 }
@@ -22,6 +24,7 @@ class _SocialAutopsyFormStatusState extends State<SocialAutopsyFormStatus> {
   bool isOffline = false;
 
   List<dynamic> _forms = [];
+  List jsonList = [];
   List entries = [];
   String jsonData;
 
@@ -31,18 +34,25 @@ class _SocialAutopsyFormStatusState extends State<SocialAutopsyFormStatus> {
   bool fileExists = false;
   Map<String, String> fileContent;
 
-  void initState() {
-    super.initState();
+  String _appliNumber;
 
-    if (widget.newEntry != null) {
-      setState(() {
-        entries.add(widget.newEntry);
-        writeToFile(widget.newEntry);
-      });
+  Future<String> getAppliNumber() async {
+    SharedPreferences pref = await SharedPreferences.getInstance();
+
+    _appliNumber = pref.getString('newApplication');
+    if (_appliNumber == '0') {
+      _appliNumber = 'No';
     }
 
-    ConnectionStatusSingleton connectionStatus = ConnectionStatusSingleton
-        .getInstance();
+    return _appliNumber;
+  }
+
+  void initState() {
+    super.initState();
+    getAppliNumber();
+
+    ConnectionStatusSingleton connectionStatus =
+        ConnectionStatusSingleton.getInstance();
     _connectionChangeStream =
         connectionStatus.connectionChange.listen(connectionChanged);
 
@@ -50,24 +60,23 @@ class _SocialAutopsyFormStatusState extends State<SocialAutopsyFormStatus> {
       dir = directory;
       jsonFile = new File(dir.path + "/" + fileName);
       fileExists = jsonFile.existsSync();
-      if (fileExists) this.setState(() => jsonData = jsonFile.readAsStringSync());
-      jsonData = jsonData.replaceAll('}{','}_{');
-      List<String> jsonList  = jsonData.split('_');
-      for(int i=0;i<jsonList.length;i++) {
-        var temp = json.decode(jsonList[i]);
-        print(temp);
-        if (isOffline) {
-          entries.add(temp);
-        }
-        else {
-          apiRequest('http://13.126.72.137/api/test',temp);
-        }
-
-        if(i==(jsonList.length-1) && !isOffline){
-          clearFile();
-        }
+      if (fileExists)
+        this.setState(() => jsonData = jsonFile.readAsStringSync());
+      if (jsonData != null) {
+        jsonData = jsonData.replaceAll('}{', '}_{');
+        jsonList = jsonData.split('_');
       }
-      print(jsonList);
+      for (int i = 0; i < jsonList.length; i++) {
+        var temp = json.decode(jsonList[i]);
+        entries.add(temp);
+        sendData('http://13.235.43.83/api/social', temp).then((status) {
+          if (status == true) {
+            if (i == (jsonList.length - 1) && !isOffline) {
+              clearFile();
+            }
+          }
+        });
+      }
     });
   }
 
@@ -78,69 +87,135 @@ class _SocialAutopsyFormStatusState extends State<SocialAutopsyFormStatus> {
   }
 
   void createFile(User content, Directory dir, String fileName) {
-    print("Creating file!");
     File file = new File(dir.path + "/" + fileName);
     file.createSync();
     fileExists = true;
-    file.writeAsStringSync(json.encode(content),mode: FileMode.append);
+    file.writeAsStringSync(json.encode(content), mode: FileMode.append);
   }
 
   void writeToFile(User entry) {
     print("Writing to file!");
     if (fileExists) {
       print("File exists");
-      jsonFile.writeAsStringSync(json.encode(entry),mode: FileMode.append);
+      jsonFile.writeAsStringSync(json.encode(entry), mode: FileMode.append);
     } else {
       print("File does not exist!");
       createFile(entry, dir, fileName);
     }
-    this.setState(() => fileContent = json.decode(jsonFile.readAsStringSync()));
-    print(fileContent);
+    fileContent = json.decode(jsonFile.readAsStringSync());
   }
 
-  void clearFile(){
-    if(fileExists){
+  void clearFile() {
+    if (fileExists) {
       jsonFile.writeAsStringSync('');
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+//  Future<bool> onBackPress(){
+//    Navigator.of(context).push(MaterialPageRoute(
+//        builder: (BuildContext context) =>
+//            Dashboard()));
+//  }
 
-
-    return Scaffold(
-      appBar: AppBar(
-        title:  Text('Social Autopsy - Pending'),
+  void showAlert(String value) {
+    AlertDialog dialog = AlertDialog(
+      content: Text(
+        value,
+        textAlign: TextAlign.justify,
       ),
-      drawer: BasicDrawer(),
-      body: ListView.builder(
-          itemCount: entries.length,
-          itemBuilder: (BuildContext  context,  int index)  {
-            return  Card(
-              child: ListTile(
-                title: Text("Name: "+entries[index].name),
-                leading: Icon(Icons.contacts),
-              ),
-            );
-          }
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: Icon(Icons.add),
-        tooltip: 'Add new Entry',
-        label: Text("New Form"),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => SocialAutopsyLogin(user:user),
-            ),
-          );
-
-
-        },
-      ),
-
+      actions: <Widget>[
+        FlatButton(
+            onPressed: () {
+              clearFile();
+              entries.clear();
+              Navigator.of(context).pop();
+            },
+            child: Text('Yes')),
+        FlatButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('No')),
+      ],
     );
+    showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (BuildContext context) {
+          return dialog;
+        }).then((_) => setState(() {}));
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+        future: getAppliNumber(),
+        builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+          String app;
+          if (snapshot.hasData && snapshot.data != null) {
+            app = snapshot.data;
+          } else {
+            app = 'No Application';
+          }
+          return Scaffold(
+              appBar: AppBar(
+                title: Text('Saved Forms'),
+              ),
+              drawer: BasicDrawer(),
+              body: Column(
+                children: <Widget>[
+                  Padding(
+                    padding: EdgeInsets.all(20.0),
+                  ),
+                  Text(' New Application Assigned:',
+                    style: TextStyle(
+                        fontSize: 20.0
+                    ),
+                  ),
+                  Text('$app',
+                    style: TextStyle(
+                        fontSize: 20.0
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(10.0),
+                  ),
+                  RaisedButton(
+                    child: Text('Clear Saved Forms'),
+                    textColor: Colors.white,
+                    color: Colors.red,
+                    onPressed: () {
+                      showAlert('Are you sure?');
+                    },
+                  ),
+                  Flexible(
+                    child: ListView.builder(
+                        itemCount: entries.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          return Card(
+                            child: ListTile(
+                              title: Text("Name: " +
+                                  entries[index]['applicationNumber']),
+                              leading: Icon(Icons.contacts),
+                            ),
+                          );
+                        }),
+                  ),
+                ],
+              ),
+              floatingActionButton: FloatingActionButton.extended(
+                icon: Icon(Icons.add),
+                tooltip: 'Add new Entry',
+                label: Text("Fill a New Form"),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SocialAutopsyLogin(user: user, appliNumber:_appliNumber),
+                    ),
+                  );
+                },
+              ));
+        });
+  }
 }
